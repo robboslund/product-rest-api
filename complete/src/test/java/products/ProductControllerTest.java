@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package hello;
+package products;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.hamcrest.core.IsNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,24 +32,44 @@ import org.springframework.test.web.servlet.MockMvc;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @AutoConfigureMockMvc
-public class GreetingControllerTests {
+public class ProductControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    public void noParamGreetingShouldReturnDefaultMessage() throws Exception {
+    public void stringInputTest() throws Exception {
 
-        this.mockMvc.perform(get("/greeting")).andDo(print()).andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value("Hello, World!"));
+        this.mockMvc.perform(get("/products/bigLebowski"))
+                .andDo(print()).andExpect(status().is4xxClientError());
     }
 
     @Test
-    public void paramGreetingShouldReturnTailoredMessage() throws Exception {
+    public void overflowInputTest() throws Exception {
 
-        this.mockMvc.perform(get("/greeting").param("name", "Spring Community"))
-                .andDo(print()).andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value("Hello, Spring Community!"));
+        this.mockMvc.perform(get("/products/9999999999999999999999999999"))
+                .andDo(print()).andExpect(status().is4xxClientError());
     }
+
+    @Test
+    public void bigLebowskiTest() throws Exception {
+
+        this.mockMvc.perform(get("/products/13860428"))
+                .andDo(print()).andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(13860428))
+                .andExpect(jsonPath("$.name").value("The Big Lebowski (Blu-ray)"))
+                .andExpect(jsonPath("$.current_price.currency_code").value("USD"));
+
+    }
+
+    @Test
+    public void noResultsTest() throws Exception {
+
+        this.mockMvc.perform(get("/products/-100")).andDo(print()).andExpect(status().is4xxClientError());
+
+
+    }
+
+
 
 }
